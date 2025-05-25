@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #ff6a00 0%, #ee0979 50%, #00c3ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .dashboard-container {
+      max-width: 400px;
+      width: 95vw;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.97);
+      padding: 28px 32px 32px 32px;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px #0002;
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+    h2 {
+      background: linear-gradient(90deg, #ee0979, #ff6a00, #00c3ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+      letter-spacing: 2px;
+      margin-bottom: 18px;
+    }
+    .dashboard-info {
+      margin-bottom: 18px;
+      font-size: 1.1em;
+      color: #222;
+      text-align: left;
+    }
+    .dashboard-info b {
+      color: #1976d2;
+    }
+    .dashboard-btn {
+      width: 100%;
+      background: linear-gradient(90deg, #ee0979, #ff6a00, #00c3ff);
+      color: #fff;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1em;
+      font-weight: 700;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px #0001;
+    }
+    .success-msg {
+      color: #388e3c;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    .error-msg {
+      color: #d32f2f;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Redirect to login if not logged in
+    if (!localStorage.getItem('user')) {
+      window.location.href = 'click& earn register_login.index.html';
+    }
+  </script>
+</head>
+<body>
+  <div class="dashboard-container">
+    <h2>User Dashboard</h2>
+    <div id="dashboardInfo" class="dashboard-info">
+      Loading...
+    </div>
+    <button class="dashboard-btn" onclick="withdrawEarnings()">Withdraw</button>
+    <div id="dashboardMsg"></div>
+    <button class="dashboard-btn" style="background:#d32f2f;" onclick="logout()">Logout</button>
+  </div>
+  <script>
+    // Supabase credentials
+    const SUPABASE_URL = "https://jptjjtgkwpjfwtmnxgov.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwdGpqdGdrd3BqZnd0bW54Z292Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNDkwMDQsImV4cCI6MjA2MjgyNTAwNH0.a9FepB73bGP_vo2eayAia6WHsCw66D2xaxk2ia_Y4MY";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Load user dashboard
+    async function loadDashboard() {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        document.getElementById('dashboardInfo').innerHTML = '<span class="error-msg">Please login first.</span>';
+        return;
+      }
+      let user;
+      try { user = JSON.parse(userStr); } catch { user = null; }
+      if (!user || !user.email) {
+        document.getElementById('dashboardInfo').innerHTML = '<span class="error-msg">Invalid user session.</span>';
+        return;
+      }
+      // Fetch latest user data
+      let { data, error } = await supabase.from('users').select('*').eq('email', user.email).single();
+      if (error || !data) {
+        document.getElementById('dashboardInfo').innerHTML = '<span class="error-msg">User not found.</span>';
+        return;
+      }
+      // Fetch direct referrals count
+      let { data: downlines } = await supabase.from('users').select('user_id').eq('referred_by', data.user_id);
+      // Show dashboard info
+      document.getElementById('dashboardInfo').innerHTML = `
+        <b>Referral Code:</b> ${data.referral_code || '-'}<br>
+        <b>Direct Referrals:</b> ${downlines ? downlines.length : 0}<br>
+        <b>Referral Earnings:</b> ${data.total_referral_earning || 0} coins<br>
+        <b>Total Earnings:</b> <span id="totalEarnings">${data.total_earning || 0}</span> coins
+      `;
+      // Store latest user data for withdrawal
+      localStorage.setItem('user', JSON.stringify(data));
+    }
+
+    // Withdraw earnings
+    async function withdrawEarnings() {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+      const amount = user.total_earning || 0;
+      if (amount <= 0) {
+        document.getElementById('dashboardMsg').innerHTML = '<span class="error-msg">No earnings available to withdraw.</span>';
+        return;
+      }
+      // Insert withdrawal request
+      const { data: wd, error } = await supabase
+        .from('withdrawals')
+        .insert([{ user_id: user.user_id, amount, status: 'pending' }])
+        .select()
+        .single();
+      if (error) {
+        document.getElementById('dashboardMsg').innerHTML = '<span class="error-msg">Withdrawal request failed. Try again.</span>';
+        return;
+      }
+      // Set user's total_earning to 0
+      await supabase.from('users').update({ total_earning: 0 }).eq('user_id', user.user_id);
+      document.getElementById('dashboardMsg').innerHTML = '<span class="success-msg">Withdrawal request submitted!</span>';
+      // Refresh dashboard after short delay
+      setTimeout(loadDashboard, 1200);
+    }
+
+    // Logout with friendly message
+    function logout() {
+      localStorage.removeItem('user');
+      document.body.innerHTML = `
+        <h2 style="color:#d32f2f;text-align:center;margin-top:40px;">
+          You have been logged out.<br>
+          <a href="click& earn register_login.index.html" style="color:#1976d2;">Go to Login</a>
+        </h2>
+      `;
+    }
+
+    // Load dashboard on page load
+    window.onload = loadDashboard;
+  </script>
+</body>
+</html>

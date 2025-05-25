@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Click & Earn - Login / Sign Up</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #ff6a00 0%, #ee0979 50%, #00c3ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      max-width: 400px;
+      width: 95vw;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.97);
+      padding: 28px 32px 32px 32px;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px #0002;
+      position: relative;
+      z-index: 2;
+    }
+    h2 {
+      text-align: center;
+      background: linear-gradient(90deg, #ee0979, #ff6a00, #00c3ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+      letter-spacing: 2px;
+      margin-bottom: 18px;
+    }
+    .tab {
+      display: flex;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px #0001;
+    }
+    .tab button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: #eee;
+      cursor: pointer;
+      font-size: 1.1em;
+      font-weight: 600;
+      transition: background 0.2s, color 0.2s;
+    }
+    .tab button.active {
+      background: linear-gradient(90deg, #ee0979, #ff6a00, #00c3ff);
+      color: #fff;
+    }
+    form {
+      display: none;
+      margin-top: 10px;
+    }
+    form.active {
+      display: block;
+    }
+    label {
+      display: block;
+      margin: 14px 0 4px;
+      font-weight: 500;
+      color: #333;
+    }
+    .input-group {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    input[type="email"], input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 10px 38px 10px 10px;
+      border: 1.5px solid #ccc;
+      border-radius: 6px;
+      font-size: 1em;
+      background: #fafaff;
+      transition: border 0.2s;
+    }
+    input:focus {
+      border: 1.5px solid #00c3ff;
+      outline: none;
+    }
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1em;
+      color: #888;
+      z-index: 3;
+    }
+    button[type="submit"], .referral-share button, #referralSection button {
+      width: 100%;
+      background: linear-gradient(90deg, #ee0979, #ff6a00, #00c3ff);
+      color: #fff;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1em;
+      font-weight: 700;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px #0001;
+    }
+    .referral-share {
+      margin: 10px 0;
+      display: flex;
+      gap: 8px;
+    }
+    .referral-share input {
+      width: 70%;
+      display: inline-block;
+      padding: 10px;
+      font-size: 1em;
+    }
+    .referral-share button {
+      width: 30%;
+      padding: 10px;
+      font-size: 1em;
+      margin-top: 0;
+    }
+    .msg {
+      color: #d32f2f;
+      margin-bottom: 10px;
+      text-align: center;
+      font-weight: 600;
+      min-height: 24px;
+    }
+    .success {
+      color: #388e3c;
+    }
+    #referralSection {
+      margin-top: 20px;
+      text-align: center;
+      animation: fadeIn 0.6s;
+    }
+    #referralSection h4 {
+      margin-bottom: 8px;
+      color: #1976d2;
+      font-weight: 700;
+    }
+    #referralSection button {
+      margin-top: 8px;
+      width: 48%;
+      margin-right: 2%;
+      margin-left: 0;
+      display: inline-block;
+    }
+    #referralSection button:last-child {
+      margin-right: 0;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    @media (max-width: 500px) {
+      .container { padding: 16px 4vw 24px 4vw; }
+      .tab button { font-size: 1em; }
+      button[type="submit"], .referral-share button, #referralSection button { font-size: 1em; padding: 10px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Click & Earn</h2>
+    <div class="tab">
+      <button id="loginTab" class="active" onclick="showTab('login')">Login</button>
+      <button id="signupTab" onclick="showTab('signup')">Sign Up</button>
+    </div>
+    <div id="msg" class="msg"></div>
+    <!-- Login Form -->
+    <form id="loginForm" class="active" autocomplete="on">
+      <label>Email</label>
+      <div class="input-group">
+        <input type="email" id="loginEmail" required>
+      </div>
+      <label>Password (10 digits)</label>
+      <div class="input-group">
+        <input type="password" id="loginPassword" pattern="\d{10}" maxlength="10" required>
+        <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">👁️</button>
+      </div>
+      <button type="submit">Login</button>
+    </form>
+    <!-- Sign Up Form -->
+    <form id="signupForm">
+      <label>Email</label>
+      <div class="input-group">
+        <input type="email" id="signupEmail" required>
+      </div>
+      <label>Password (10 digits)</label>
+      <div class="input-group">
+        <input type="password" id="signupPassword" pattern="\d{10}" maxlength="10" required>
+        <button type="button" class="toggle-password" onclick="togglePassword('signupPassword', this)">👁️</button>
+      </div>
+      <label>Referral Code <span style="font-size:0.9em;color:#888;">(optional for Admin/User1)</span></label>
+      <div class="input-group">
+        <input type="text" id="signupReferral" maxlength="8" autocomplete="off">
+      </div>
+      <button type="submit">Sign Up</button>
+    </form>
+    <!-- Referral Code Display -->
+    <div id="referralSection" style="display:none;">
+      <h4>Your Referral Code</h4>
+      <div class="referral-share">
+        <input type="text" id="userReferralCode" readonly>
+        <button onclick="copyReferral()">Copy</button>
+      </div>
+      <button onclick="shareReferral()">Share via WhatsApp</button>
+      <button onclick="logout()" style="background:#d32f2f;">Logout</button>
+      <div style="margin-top:18px;text-align:left;">
+        <b>Direct Referrals:</b> <span id="directReferrals">0</span><br>
+        <b>Referral Earnings:</b> <span id="referralEarnings">0</span> coins
+      </div>
+    </div>
+  </div>
+  <script>
+    // Supabase credentials
+    const SUPABASE_URL = "https://jptjjtgkwpjfwtmnxgov.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwdGpqdGdrd3BqZnd0bW54Z292Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNDkwMDQsImV4cCI6MjA2MjgyNTAwNH0.a9FepB73bGP_vo2eayAia6WHsCw66D2xaxk2ia_Y4MY";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Tab switching
+    function showTab(tab) {
+      document.getElementById('loginTab').classList.toggle('active', tab === 'login');
+      document.getElementById('signupTab').classList.toggle('active', tab === 'signup');
+      document.getElementById('loginForm').classList.toggle('active', tab === 'login');
+      document.getElementById('signupForm').classList.toggle('active', tab === 'signup');
+      document.getElementById('msg').textContent = '';
+      if(tab === 'signup') {
+        document.getElementById('signupReferral').value = '';
+      }
+    }
+
+    // Toggle password visibility
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "🙈";
+      } else {
+        input.type = "password";
+        btn.textContent = "👁️";
+      }
+    }
+
+    // Copy referral code
+    function copyReferral() {
+      const input = document.getElementById('userReferralCode');
+      input.select();
+      document.execCommand('copy');
+      alert('Referral code copied!');
+    }
+
+    // Share via WhatsApp
+    function shareReferral() {
+      const code = document.getElementById('userReferralCode').value;
+      const url = `https://wa.me/?text=Join%20Click%20%26%20Earn!%20Use%20my%20referral%20code:%20${code}`;
+      window.open(url, '_blank');
+    }
+
+    // Logout
+    function logout() {
+      localStorage.removeItem('user');
+      document.getElementById('referralSection').style.display = 'none';
+      showTab('login');
+    }
+
+    // Show referral code after login/signup
+    async function showReferralSection(user, isAdmin = false) {
+      document.getElementById('userReferralCode').value = isAdmin ? "admin1234" : user.referral_code;
+      document.getElementById('referralSection').style.display = 'block';
+      document.getElementById('loginForm').classList.remove('active');
+      document.getElementById('signupForm').classList.remove('active');
+      document.getElementById('msg').textContent = '';
+      // Show direct referrals and earnings for all users (including User1 and others)
+      if (user && user.user_id) {
+        let { data: downlines } = await supabase
+          .from('users')
+          .select('user_id')
+          .eq('referred_by', user.user_id);
+        document.getElementById('directReferrals').textContent = downlines ? downlines.length : 0;
+        document.getElementById('referralEarnings').textContent = user.total_referral_earning || 0;
+      } else {
+        document.getElementById('directReferrals').textContent = '-';
+        document.getElementById('referralEarnings').textContent = '-';
+      }
+    }
+
+    // LOGIN
+    document.getElementById('loginForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword').value.trim();
+      document.getElementById('msg').textContent = 'Logging in...';
+      // Admin login
+      if(email === "jhumjhum939@gmail.com" && password === "1234567890") {
+        showReferralSection({referral_code: "admin1234"}, true);
+        document.getElementById('msg').textContent = "Logged in as Admin!";
+        document.getElementById('msg').classList.add('success');
+        localStorage.setItem('user', JSON.stringify({email, isAdmin:true}));
+        return;
+      }
+      // User1 login (robust)
+      if(email === "jumurroy440@gmail.com" && password === "9679481002") {
+        // Try to fetch User1 from DB
+        let { data: user1, error: user1err } = await supabase.from('users').select('*').eq('email', email).single();
+        if(user1) {
+          localStorage.setItem('user', JSON.stringify(user1));
+          await showReferralSection(user1);
+          document.getElementById('msg').textContent = "Logged in as User1!";
+          document.getElementById('msg').classList.add('success');
+          return;
+        }
+        // If not found, try to create User1
+        let referral_code = email.slice(0,4).toLowerCase() + password.slice(-4);
+        let { data: newUser1, error: insertErr } = await supabase.from('users').insert([{
+          email, password, referral_code, referred_by: null, total_task_earning: 0, total_referral_earning: 0, total_earning: 0
+        }]).select().single();
+        if(newUser1) {
+          localStorage.setItem('user', JSON.stringify(newUser1));
+          await showReferralSection(newUser1);
+          document.getElementById('msg').textContent = "Logged in as User1!";
+          document.getElementById('msg').classList.add('success');
+          return;
+        }
+        // If insert failed, try to fetch again (maybe due to race condition)
+        let { data: user1again } = await supabase.from('users').select('*').eq('email', email).single();
+        if(user1again) {
+          localStorage.setItem('user', JSON.stringify(user1again));
+          await showReferralSection(user1again);
+          document.getElementById('msg').textContent = "Logged in as User1!";
+          document.getElementById('msg').classList.add('success');
+          return;
+        }
+        document.getElementById('msg').textContent = "User1 creation failed. Please try again later.";
+        return;
+      }
+      // User login
+      let { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+      if(error || !data) {
+        document.getElementById('msg').textContent = "Invalid email or password.";
+        return;
+      }
+      if(data.password !== password) {
+        document.getElementById('msg').textContent = "Invalid email or password.";
+        return;
+      }
+      localStorage.setItem('user', JSON.stringify(data));
+      showReferralSection(data);
+      document.getElementById('msg').textContent = "Login successful!";
+      document.getElementById('msg').classList.add('success');
+    };
+
+    // SIGNUP
+    document.getElementById('signupForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+      const password = document.getElementById('signupPassword').value.trim();
+      const referral = document.getElementById('signupReferral').value.trim().toLowerCase();
+      document.getElementById('msg').textContent = 'Signing up...';
+
+      // Admin logic
+      if(email === "jhumjhum939@gmail.com" && password === "1234567890") {
+        document.getElementById('msg').textContent = "Admin already exists. Please login.";
+        return;
+      }
+      // User1 logic
+      if(email === "jumurroy440@gmail.com" && password === "9679481002") {
+        // Check if exists
+        let { data: user1 } = await supabase.from('users').select('user_id').eq('email', email).single();
+        if(user1) {
+          document.getElementById('msg').textContent = "User1 already exists. Please login.";
+          return;
+        }
+        // Insert User1
+        let referral_code = email.slice(0,4).toLowerCase() + password.slice(-4);
+        let { data: newUser1, error: err } = await supabase.from('users').insert([{
+          email, password, referral_code, referred_by: null, total_task_earning: 0, total_referral_earning: 0, total_earning: 0
+        }]).select().single();
+        if(err || !newUser1) {
+          document.getElementById('msg').textContent = "Signup failed. Try again.";
+          return;
+        }
+        localStorage.setItem('user', JSON.stringify(newUser1));
+        showReferralSection(newUser1);
+        document.getElementById('msg').textContent = "Signup successful!";
+        document.getElementById('msg').classList.add('success');
+        return;
+      }
+      // Check if email already exists
+      let { data: exists } = await supabase.from('users').select('user_id').eq('email', email).single();
+      if(exists) {
+        document.getElementById('msg').textContent = "Email already registered. Please login.";
+        return;
+      }
+      // Check referral code (required for all except Admin/User1)
+      if(!referral || referral.length !== 8) {
+        document.getElementById('msg').textContent = "Referral code required (8 chars).";
+        return;
+      }
+      // Check referral exists
+      let { data: refUser, error: refErr } = await supabase.from('users').select('user_id').eq('referral_code', referral).single();
+      if(refErr || !refUser) {
+        document.getElementById('msg').textContent = "Referral code not found.";
+        return;
+      }
+      // Generate referral code
+      let referral_code = email.slice(0,4).toLowerCase() + password.slice(-4);
+      // Insert user
+      let { data: newUser, error: insertError } = await supabase.from('users').insert([{
+        email, password, referral_code, referred_by: refUser.user_id, total_task_earning: 0, total_referral_earning: 0, total_earning: 0
+      }]).select().single();
+      if(insertError || !newUser) {
+        document.getElementById('msg').textContent = "Signup failed. Try again.";
+        return;
+      }
+      localStorage.setItem('user', JSON.stringify(newUser));
+      showReferralSection(newUser);
+      document.getElementById('msg').textContent = "Signup successful!";
+      document.getElementById('msg').classList.add('success');
+    };
+
+    // Auto-login if already logged in
+    window.onload = async function() {
+      const userStr = localStorage.getItem('user');
+      if(!userStr) return;
+      let user = {};
+      try { user = JSON.parse(userStr); } catch { return; }
+      if(user.isAdmin) {
+        showReferralSection({referral_code: "admin1234"}, true);
+      } else if(user.email === "jumurroy440@gmail.com") {
+        let { data } = await supabase.from('users').select('*').eq('email', user.email).single();
+        if(data) {
+          localStorage.setItem('user', JSON.stringify(data));
+          showReferralSection(data);
+        }
+      } else if(user.email) {
+        let { data } = await supabase.from('users').select('*').eq('email', user.email).single();
+        if(data) showReferralSection(data);
+      }
+    };
+  </script>
+</body>
+</html>
